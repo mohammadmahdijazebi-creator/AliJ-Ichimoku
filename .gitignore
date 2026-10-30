@@ -3,3 +3,6 @@
 /desktop_source/
 __pycache__/
 *.pyc
+
+/android/.buildozer/
+/android/bin/
