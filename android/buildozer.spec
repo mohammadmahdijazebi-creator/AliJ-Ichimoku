@@ -6,7 +6,7 @@ source.dir = .
 source.include_exts = py,png,jpg,ttf
 source.exclude_dirs = __pycache__,.git,bin,.buildozer
 version = 0.1.0
-requirements = python3,kivy
+requirements = python3,kivy,charset-normalizer==3.3.2
 orientation = portrait
 fullscreen = 0
 icon.filename = branding/AliJ.png
