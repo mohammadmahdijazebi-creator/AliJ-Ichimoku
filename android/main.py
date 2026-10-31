@@ -31,7 +31,55 @@ class AliJApp(App):
             halign="center", size_hint_y=None, height=dp(height),
         )
 
+    def show_archive(self):
+        from market_archive import connect
+
+        folder = Path(self.user_data_dir) / "all_market"
+        db = None
+        try:
+            db = connect(folder)
+            symbols = db.execute(
+                "SELECT COUNT(DISTINCT symbol) FROM candles"
+            ).fetchone()[0]
+            candles = db.execute(
+                "SELECT COUNT(*) FROM candles"
+            ).fetchone()[0]
+            message = (
+                f"تعداد نمادها: {symbols}\n"
+                f"تعداد کندل‌ها: {candles}\n"
+                + ("آرشیو هنوز خالی است."
+                   if candles == 0 else "آرشیو محلی آماده است.")
+            )
+        except Exception:
+            from kivy.logger import Logger
+            Logger.exception("Archive: opening database failed")
+            message = "باز کردن آرشیو ناموفق بود."
+        finally:
+            if db is not None:
+                db.close()
+
+        content = BoxLayout(
+            orientation="vertical", padding=dp(12), spacing=dp(12)
+        )
+        content.add_widget(self.make_label(message, 120))
+        close = Button(
+            text=fa("بستن"), font_name=FONT,
+            size_hint_y=None, height=dp(48),
+        )
+        content.add_widget(close)
+        popup = Popup(
+            title=fa("آرشیو بازار"), title_font=FONT,
+            content=content, size_hint=(0.92, None),
+            height=dp(290),
+        )
+        close.bind(on_release=popup.dismiss)
+        popup.open()
+
     def show_status(self, title):
+        if title == "آرشیو بازار":
+            self.show_archive()
+            return
+
         content = BoxLayout(
             orientation="vertical", padding=dp(12), spacing=dp(12)
         )
