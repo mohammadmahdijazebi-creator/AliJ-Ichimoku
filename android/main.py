@@ -26,10 +26,21 @@ def fa(text):
 
 class AliJApp(App):
     def make_label(self, text, height=48):
-        return Label(
+        label = Label(
             text=fa(text), font_name=FONT, font_size="18sp",
-            halign="center", size_hint_y=None, height=dp(height),
+            halign="center", valign="middle",
+            size_hint_y=None, height=dp(height),
         )
+
+        def fit_width(widget, width):
+            widget.text_size = (max(dp(1), width - dp(16)), None)
+
+        def fit_height(widget, texture_size):
+            widget.height = max(dp(height), texture_size[1] + dp(12))
+
+        label.bind(width=fit_width, texture_size=fit_height)
+        fit_width(label, label.width)
+        return label
 
     def show_archive(self):
         from market_archive import connect
@@ -453,7 +464,8 @@ class AliJApp(App):
             "داده‌های تعدیل‌شده و تعدیل‌نشده را مخلوط نکنید.", 120
         ))
         symbol_input = TextInput(
-            multiline=False, size_hint_y=None, height=dp(48)
+            multiline=False, size_hint_y=None, height=dp(48),
+            font_name=FONT, font_size="20sp", halign="right"
         )
         box.add_widget(symbol_input)
         status = self.make_label("", 60)
