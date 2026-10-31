@@ -70,3 +70,63 @@ class LocalAuth:
             data["username"].encode("utf-8")
         )
         return valid_password and valid_username
+
+
+    def _save_atomic(self, data):
+        import tempfile
+        fd, name = tempfile.mkstemp(
+            prefix=".credentials-", dir=str(self.folder)
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(name, self.path)
+        finally:
+            if os.path.exists(name):
+                os.unlink(name)
+
+    @staticmethod
+    def _recovery_digest(code):
+        normalized = code.strip().replace("-", "").upper()
+        if len(normalized) != 64:
+            raise ValueError("Invalid recovery code")
+        raw = bytes.fromhex(normalized)
+        if len(raw) != 32:
+            raise ValueError("Invalid recovery code")
+        return hashlib.sha256(raw).hexdigest()
+
+    def create_recovery_code(self, username, password):
+        if not self.verify(username, password):
+            raise PermissionError("Invalid credentials")
+        data = self._load()
+        raw = secrets.token_hex(32).upper()
+        code = "-".join(raw[i:i+8] for i in range(0, 64, 8))
+        data["recovery_digest"] = self._recovery_digest(code)
+        self._save_atomic(data)
+        return code
+
+    def reset_password(self, code, new_password):
+        if not 8 <= len(new_password) <= 256:
+            raise ValueError("Password must be 8-256 characters")
+        data = self._load()
+        stored = data.get("recovery_digest")
+        if not isinstance(stored, str):
+            return False
+        try:
+            candidate = self._recovery_digest(code)
+            valid = hmac.compare_digest(candidate, stored)
+        except (ValueError, TypeError):
+            return False
+        if not valid:
+            return False
+        salt = secrets.token_bytes(32)
+        data["salt"] = salt.hex()
+        data["digest"] = hashlib.pbkdf2_hmac(
+            "sha256", new_password.encode("utf-8"),
+            salt, ITERATIONS
+        ).hex()
+        data.pop("recovery_digest", None)
+        self._save_atomic(data)
+        return True
