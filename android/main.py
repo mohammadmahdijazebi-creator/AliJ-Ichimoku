@@ -102,7 +102,57 @@ class AliJApp(App):
         popup.open()
 
     def build(self):
-        self.title = "AliJ-Ichimoku"
+        from local_auth import LocalAuth
+        self.title = "ALI JAZEBI"
+        Window.clearcolor = (0.06, 0.09, 0.14, 1)
+        self.auth = LocalAuth(self.user_data_dir)
+        self.container = BoxLayout(orientation="vertical")
+        self.show_login()
+        return self.container
+
+    def show_login(self):
+        from auth_ui import LoginPanel
+        self.container.clear_widgets()
+        scroll = ScrollView()
+        self._login_generation = getattr(
+            self, "_login_generation", 0
+        ) + 1
+        generation = self._login_generation
+        panel = LoginPanel(
+            self, self.auth,
+            lambda: self.accept_login(generation),
+            size_hint_y=None
+        )
+        panel.bind(minimum_height=panel.setter("height"))
+        scroll.add_widget(panel)
+        self.container.add_widget(scroll)
+
+    def accept_login(self, generation):
+        if generation != self._login_generation:
+            return
+        if getattr(self, "_background", False):
+            return
+        self.open_menu()
+
+    def on_pause(self):
+        self._background = True
+        self._login_generation += 1
+        for widget in list(Window.children):
+            if isinstance(widget, Popup):
+                widget.dismiss(animation=False)
+        self.container.clear_widgets()
+        return True
+
+    def on_resume(self):
+        self._background = False
+        self.show_login()
+
+    def open_menu(self):
+        self.container.clear_widgets()
+        self.container.add_widget(self.build_menu())
+
+    def build_menu(self):
+        self.title = "ALI JAZEBI"
         Window.clearcolor = (0.06, 0.09, 0.14, 1)
 
         scroll = ScrollView()
@@ -118,7 +168,7 @@ class AliJApp(App):
                 source=str(logo), size_hint_y=None, height=dp(180)
             ))
 
-        root.add_widget(self.make_label("ایچیموکو | علی‌جی"))
+        root.add_widget(self.make_label("ایچیموکو | علی جاذبی"))
         root.add_widget(self.make_label(
             "نسخه آزمایشی رابط اندروید", 36
         ))

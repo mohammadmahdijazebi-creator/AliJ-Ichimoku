@@ -1,5 +1,5 @@
 [app]
-title = AliJ-Ichimoku
+title = ALI JAZEBI
 package.name = alijichimoku
 package.domain = org.alij
 source.dir = .
