@@ -29,6 +29,18 @@ jobs:
           sudo apt-get install -y git zip unzip autoconf automake libtool pkg-config cmake zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 libffi-dev libssl-dev
           python -m pip install "buildozer==1.5.0" "Cython==0.29.36" setuptools wheel
 
+      - name: Restore debug signing key
+        env:
+          SIGNING_KEY: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          set -eu
+          test -n "$SIGNING_KEY"
+          mkdir -p "$HOME/.android"
+          chmod 700 "$HOME/.android"
+          printf '%s' "$SIGNING_KEY" | base64 --decode > "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey > /dev/null
+
       - name: Build debug APK
         working-directory: android
         run: buildozer -v android debug
